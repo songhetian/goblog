@@ -12,6 +12,7 @@ func handlerFunc(w http.ResponseWriter, r *http.Request) {
 	} else if r.URL.Path == "/about" {
 		fmt.Fprint(w, "<h1>请求的地址1是:"+r.URL.Path+"</h1>")
 	} else {
+		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, "<h1>请求的地址不存在</h1>")
 	}
 }
