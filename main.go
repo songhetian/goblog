@@ -58,4 +58,9 @@ func main() {
 
 	fmt.Println("homeURL:", homeURL)
 
+	articleURL, _ := router.Get("articles.show").URL("id", "23")
+
+	fmt.Println("articleURL:", articleURL)
+
+	http.ListenAndServe(":3000", router)
 }
