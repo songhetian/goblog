@@ -39,6 +39,17 @@ func articlesStoredHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "创建新文章")
 }
 
+func forceHTMLMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//设置表头
+
+		w.Header().Set("content-type", "text/html ; charset=utf-8")
+
+		//继续处理请求
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	router := mux.NewRouter()
 
@@ -52,6 +63,9 @@ func main() {
 	//自定义404页面
 
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
+
+	//中间件:强制内容类型为HTML
+	router.Use(forceHTMLMiddleware)
 
 	//通过命名路由获取URL示例
 	homeURL, _ := router.Get("home").URL()
