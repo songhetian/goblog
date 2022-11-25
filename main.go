@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var router = mux.NewRouter()
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("content-type", "text/html ; charset=utf-8")
@@ -40,6 +42,27 @@ func articlesStoredHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "创建新文章")
 }
 
+func articlesCreatedHandler(w http.ResponseWriter, r *http.Request) {
+
+	html := `<!DOCTYPE html>
+				<html lang="en">
+				<head>
+					<title>创建文章 —— 我的技术博客</title>
+				</head>
+				<body>
+					<form action="%s" method="post">
+						<p><input type="text" name="title"></p>
+						<p><textarea name="body" cols="30" rows="10"></textarea></p>
+						<p><button type="submit">提交</button></p>
+					</form>
+				</body>
+				</html>
+				`
+	storeURL, _ := router.Get("articles.store").URL()
+
+	fmt.Fprintf(w, html, storeURL)
+}
+
 func forceHTMLMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//设置表头
@@ -51,6 +74,7 @@ func forceHTMLMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// 中间件
 func removeTrailingSlash(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -62,7 +86,6 @@ func removeTrailingSlash(next http.Handler) http.Handler {
 }
 
 func main() {
-	router := mux.NewRouter()
 
 	router.HandleFunc("/", homeHandler).Methods("GET").Name("home")
 	router.HandleFunc("/about", aboutHandle).Methods("GET").Name("about")
@@ -71,21 +94,13 @@ func main() {
 	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
 	router.HandleFunc("/articles", articlesStoredHandler).Methods("POST").Name("articles.store")
 
+	router.HandleFunc("/articles/create", articlesCreatedHandler).Methods("GET").Name("articles.create")
 	//自定义404页面
 
 	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	//中间件:强制内容类型为HTML
 	router.Use(forceHTMLMiddleware)
-
-	//通过命名路由获取URL示例
-	homeURL, _ := router.Get("home").URL()
-
-	fmt.Println("homeURL:", homeURL)
-
-	articleURL, _ := router.Get("articles.show").URL("id", "23")
-
-	fmt.Println("articleURL:", articleURL)
 
 	http.ListenAndServe(":3000", removeTrailingSlash(router))
 }
