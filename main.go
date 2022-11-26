@@ -39,7 +39,27 @@ func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func articlesStoredHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "创建新文章")
+
+	err := r.ParseForm()
+
+	if err != nil {
+		fmt.Fprintf(w, "请提供正确的数据")
+
+		return
+	}
+
+	title := r.PostForm.Get("title")
+
+	fmt.Fprintf(w, "POST PostForm: %v <br>", r.PostForm)
+	fmt.Fprintf(w, "POST Form: %v <br>", r.Form)
+	fmt.Fprintf(w, "title 值: %v <br>", title)
+
+	fmt.Fprintf(w, "r.Form 中的title值为：%v <br>", r.FormValue("title"))
+	fmt.Fprintf(w, "r.PostForm 中的title值为：%v <br>", r.PostFormValue("title"))
+
+	fmt.Fprintf(w, "r.Form 中的test值为：%v <br>", r.FormValue("test"))
+	fmt.Fprintf(w, "r.PostForm 中的test值为：%v <br>", r.PostFormValue("test"))
+
 }
 
 func articlesCreatedHandler(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +70,7 @@ func articlesCreatedHandler(w http.ResponseWriter, r *http.Request) {
 					<title>创建文章 —— 我的技术博客</title>
 				</head>
 				<body>
-					<form action="%s" method="post">
+					<form action="%s?test=data" method="post">
 						<p><input type="text" name="title"></p>
 						<p><textarea name="body" cols="30" rows="10"></textarea></p>
 						<p><button type="submit">提交</button></p>
