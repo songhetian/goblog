@@ -45,6 +45,11 @@ func initDB() {
 	checkError(err)
 }
 
+type Article struct {
+	Title, Body string
+	ID          int64
+}
+
 func checkError(err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -78,7 +83,33 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 func articlesShowHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	fmt.Fprintf(w, "文章 ID:"+id)
+
+	//读取对应的数据结构
+	article := Article{}
+	query := "SELECT * FROM articles WHERE id = ?"
+	err := db.QueryRow(query, id).Scan(&article.ID, &article.Title, &article.Body)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// 3.1 数据未找到
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprintf(w, "404 文章未找到")
+		} else {
+			// 3.2 数据库错误
+			checkError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "500 服务器内部错误")
+		}
+	} else {
+
+		tmpl, err := template.ParseFiles("resources/views/articles/show.gohtml")
+		checkError(err)
+
+		err = tmpl.Execute(w, article)
+		checkError(err)
+		//fmt.Fprintf(w, "读取成功，文章标题----"+article.Title)
+	}
+
 }
 
 func articlesIndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -261,7 +292,6 @@ func main() {
 	router.HandleFunc("/articles/{id:[0-9]+}", articlesShowHandler).Methods("GET").Name("articles.show")
 	router.HandleFunc("/articles", articlesIndexHandler).Methods("GET").Name("articles.index")
 	router.HandleFunc("/articles", articlesStoredHandler).Methods("POST").Name("articles.store")
-
 	router.HandleFunc("/articles/create", articlesCreatedHandler).Methods("GET").Name("articles.create")
 	//自定义404页面
 
