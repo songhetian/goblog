@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -125,11 +126,14 @@ func articlesStoredHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(errors) == 0 {
-		fmt.Fprint(w, "验证通过!<br>")
-		fmt.Fprintf(w, "title 的值为: %v <br>", title)
-		fmt.Fprintf(w, "title 的长度为: %v <br>", utf8.RuneCountInString(title))
-		fmt.Fprintf(w, "body 的值为: %v <br>", body)
-		fmt.Fprintf(w, "body 的长度为: %v <br>", utf8.RuneCountInString(body))
+		LastInsertId, err := saveArticleToDB(title, body)
+		if LastInsertId > 0 {
+			fmt.Fprint(w, "插入成功,ID为"+strconv.FormatInt(LastInsertId, 10))
+		} else {
+			checkError(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "500 服务器内部错误")
+		}
 	} else {
 
 		storeUrl, _ := router.Get("articles.store").URL()
@@ -154,6 +158,40 @@ func articlesStoredHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+}
+
+func saveArticleToDB(title string, body string) (int64, error) {
+	//设置初始化
+
+	var (
+		id   int64
+		err  error
+		rs   sql.Result
+		stmt *sql.Stmt
+	)
+
+	//获取一个perpare声明语句
+	stmt, err = db.Prepare("INSERT INTO articles (title, body) VALUES(?,?)")
+	//例行的错误检查
+	if err != nil {
+		return 0, err
+	}
+
+	//在此函数运行结束后关闭此语句 防止占用sql连接
+	defer stmt.Close()
+
+	//执行请求 传参进入绑定的内容
+	rs, err = stmt.Exec(title, body)
+	if err != nil {
+		return 0, err
+	}
+
+	//插入成功的话 会返回自增id
+	if id, err = rs.LastInsertId(); id > 0 {
+		return id, nil
+	}
+
+	return 0, err
 }
 
 func articlesCreatedHandler(w http.ResponseWriter, r *http.Request) {
