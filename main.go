@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"strings"
 	"unicode/utf8"
-
 	"github.com/gorilla/mux"
 )
 
